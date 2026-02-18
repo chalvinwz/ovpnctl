@@ -49,7 +49,7 @@ mv ovpnctl ~/bin/
 ovpnctl [flags] <command>
 
 Commands:
-  list        List configured VPN profiles
+  profiles    List configured VPN profiles
   connect     Start VPN session (prompts OTP)
   sessions    Show active OpenVPN 3 sessions
   disconnect  Stop a session
