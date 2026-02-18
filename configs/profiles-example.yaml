@@ -1,0 +1,12 @@
+profiles:
+  - name: office
+    config_file: /etc/openvpn/office.ovpn
+    username: user@corp
+    password: very$ecret2026
+    private_key_pass: ""
+
+  - name: personal-fast
+    config_file: ~/vpn/fast.ovpn
+    username: user
+    password: pass1234$$
+    private_key_pass: ""
