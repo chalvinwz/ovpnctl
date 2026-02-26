@@ -88,6 +88,7 @@ func TestRequireBinary(t *testing.T) {
 	orig := lookPath
 	defer func() { lookPath = orig }()
 
+	_ = os.Unsetenv("OVPN3_BIN")
 	lookPath = func(file string) (string, error) { return "", errors.New("nope") }
 	if err := RequireBinary(); err == nil {
 		t.Fatalf("expected error when binary missing")
@@ -96,6 +97,21 @@ func TestRequireBinary(t *testing.T) {
 	lookPath = func(file string) (string, error) { return "/usr/bin/openvpn3", nil }
 	if err := RequireBinary(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBinaryNameOverride(t *testing.T) {
+	orig := os.Getenv("OVPN3_BIN")
+	defer func() { _ = os.Setenv("OVPN3_BIN", orig) }()
+
+	_ = os.Setenv("OVPN3_BIN", "/usr/local/bin/openvpn3")
+	if got := binaryName(); got != "/usr/local/bin/openvpn3" {
+		t.Fatalf("expected override binary, got %q", got)
+	}
+
+	_ = os.Unsetenv("OVPN3_BIN")
+	if got := binaryName(); got != "openvpn3" {
+		t.Fatalf("expected default binary, got %q", got)
 	}
 }
 
