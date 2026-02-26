@@ -3,17 +3,16 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/chalvinwz/ovpnctl/internal/config"
 	"github.com/spf13/cobra"
 )
 
 func profilesCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "profiles",
-		Aliases: []string{"ls", "profiles"},
+		Aliases: []string{"ls"},
 		Short:   "List configured OpenVPN profiles",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load()
+			cfg, err := loadConfigCmd()
 			if err != nil {
 				return err
 			}
@@ -25,7 +24,11 @@ func profilesCmd() *cobra.Command {
 
 			fmt.Println("Configured profiles:")
 			for i, p := range cfg.Profiles {
-				fmt.Printf("  %2d. %-20s  %s\n", i+1, p.Name, p.ConfigFile)
+				if err := p.Validate(); err != nil {
+					fmt.Printf("  %2d. %-20s  INVALID (%v)\n", i+1, p.Name, err)
+					continue
+				}
+				fmt.Printf("  %2d. %-20s  %s\n", i+1, p.Name, p.ExpandedConfigFile())
 			}
 			return nil
 		},

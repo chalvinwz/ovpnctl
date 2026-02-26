@@ -14,20 +14,20 @@ Designed for personal / team use with external YAML configuration — credential
 ## Features
 
 - External `profiles.yaml` (supports multiple profiles)
-- Username, password, private key stored outside the binary
-- Connect by profile name **or** number
+- Connect by profile name (**case-insensitive**) or number
+- `~` expansion for profile `config_file`
+- Per-profile validation with clear invalid-profile output
+- OpenVPN binary preflight check (`openvpn3` must exist in PATH)
 - OTP prompt only during connect (no full credential re-entry)
-- List and disconnect active sessions with numbered shortcuts
-- Clean error messages & helpful output
+- List/disconnect active sessions with numbered shortcuts
+- Clean error messages and helpful output
 
 ## Requirements
 
-- Go 1.22 or newer (to build)
+- Go 1.22+ (to build)
 - [OpenVPN 3 Linux client](https://openvpn.net/community-downloads/) (`openvpn3` command must be in PATH)
 
 ## Installation
-
-### Build ovpnctl
 
 ```bash
 git clone https://github.com/chalvinwz/ovpnctl.git
@@ -35,7 +35,7 @@ cd ovpnctl
 go build -o ovpnctl ./cmd/ovpnctl
 ```
 
-Move to a directory in your PATH (optional):
+Optional:
 
 ```bash
 sudo mv ovpnctl /usr/local/bin/
@@ -56,12 +56,13 @@ Commands:
 
 Flags:
   --config string   path to profiles.yaml
-                    (default locations: ~/.config/ovpnctl/profiles.yaml)
+                    (default search: ~/.config/ovpnctl/profiles.yaml, then ./profiles.yaml)
 ```
 
-### Configuration (profiles.yaml)
+## Configuration (`profiles.yaml`)
 
-Create `~/.config/ovpnctl/profiles.yaml` (or any path — pass with `--config`)
+Create `~/.config/ovpnctl/profiles.yaml` (or pass custom path via `--config`).
+You can start by copying `examples/profiles.example.yaml`.
 
 ```yaml
 profiles:
@@ -78,20 +79,26 @@ profiles:
     private_key_pass: ""
 ```
 
-Example commands:
+### Notes
+
+- Profile names must be unique (case-insensitive).
+- Required profile fields: `name`, `config_file`, `username`, `password`.
+- `connect` requires non-empty OTP input.
+
+## Examples
 
 ```bash
 # List profiles
 ovpnctl profiles
 
-# Connect (by name or number)
+# Connect (name or number)
 ovpnctl connect office
 ovpnctl connect 1
 
-# Show active sessions
+# Active sessions
 ovpnctl sessions
 
-# Disconnect (by number from sessions list, or full path)
+# Disconnect (number from sessions list, or full path)
 ovpnctl disconnect 2
 ovpnctl disconnect /net/openvpn/v3/sessions/8bca2e2ds11e4s478csa988s969281af2804
 ```
@@ -99,16 +106,28 @@ ovpnctl disconnect /net/openvpn/v3/sessions/8bca2e2ds11e4s478csa988s969281af2804
 ## Development
 
 ```bash
-# Run directly without building
+# Run directly
 go run ./cmd/ovpnctl -h
 
-# Add new subcommand (example)
-# → create internal/cmd/newcmd.go with NewNewcmdCmd() function
-# → add rootCmd.AddCommand(newNewcmdCmd()) in root.go
+# Common tasks
+make build
+make test
+make cover
+make fmt
 ```
 
-## Security Notes
+## Project structure
 
-- Never commit real `profiles.yaml` to git
-- Use `.gitignore` to exclude it
-- Consider using secret management (pass, 1Password CLI, etc.) for production/team use
+```text
+cmd/ovpnctl/         CLI entrypoint
+internal/cmd/        Cobra commands + command orchestration
+internal/config/     Config model, loading, and validation
+internal/openvpn3/   OpenVPN3 process integration/parsing
+examples/            Example configuration files
+```
+
+## Security notes
+
+- Never commit real `profiles.yaml` to git.
+- Use `.gitignore` to exclude local config.
+- For team/prod use, consider loading secrets from a secret manager instead of plain YAML.

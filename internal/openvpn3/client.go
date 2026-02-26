@@ -3,6 +3,7 @@ package openvpn3
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,8 +16,22 @@ type Session struct {
 	Config string
 }
 
+var (
+	execCommand           = exec.Command
+	lookPath              = exec.LookPath
+	stdout      io.Writer = os.Stdout
+	stderr      io.Writer = os.Stderr
+)
+
+func RequireBinary() error {
+	if _, err := lookPath("openvpn3"); err != nil {
+		return fmt.Errorf("openvpn3 command not found in PATH")
+	}
+	return nil
+}
+
 func StartSession(p *config.Profile, otp string) error {
-	cmd := exec.Command("openvpn3", "session-start", "--config", p.ConfigFile)
+	cmd := execCommand("openvpn3", "session-start", "--config", p.ExpandedConfigFile())
 
 	input := p.Username + "\n" +
 		p.Password + "\n" +
@@ -24,8 +39,8 @@ func StartSession(p *config.Profile, otp string) error {
 		p.PrivateKeyPass + "\n"
 
 	cmd.Stdin = bytes.NewBufferString(input)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("openvpn3 session-start failed: %w", err)
@@ -34,7 +49,7 @@ func StartSession(p *config.Profile, otp string) error {
 }
 
 func ListSessions() ([]Session, error) {
-	out, err := exec.Command("openvpn3", "sessions-list").CombinedOutput()
+	out, err := execCommand("openvpn3", "sessions-list").CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("sessions-list failed: %w\n%s", err, out)
 	}
@@ -42,7 +57,7 @@ func ListSessions() ([]Session, error) {
 }
 
 func Disconnect(path string) error {
-	cmd := exec.Command("openvpn3", "session-manage", "--session-path", path, "--disconnect")
+	cmd := execCommand("openvpn3", "session-manage", "--session-path", path, "--disconnect")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("disconnect failed: %w\noutput: %s", err, out)
@@ -53,7 +68,7 @@ func Disconnect(path string) error {
 func PrintSessions() error {
 	sessions, err := ListSessions()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
+		fmt.Fprintf(stderr, "warning: %v\n", err)
 		return err
 	}
 	if len(sessions) == 0 {
