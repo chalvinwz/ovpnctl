@@ -2,7 +2,6 @@
 out/
 bin/
 dist/
-ovpnctl
 
 # Test artifacts
 cover.out
