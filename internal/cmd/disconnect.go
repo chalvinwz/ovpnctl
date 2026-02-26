@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/chalvinwz/ovpnctl/internal/openvpn3"
 	"github.com/spf13/cobra"
@@ -12,8 +10,8 @@ import (
 
 func disconnectCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "disconnect SESSION|PROFILE",
-		Short: "Disconnect by session number, full session path, or profile name",
+		Use:   "disconnect SESSION",
+		Short: "Disconnect by session number or full session path",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requireBinaryCmd(); err != nil {
@@ -47,29 +45,12 @@ func resolveDisconnectPath(target string) (string, error) {
 		return "", err
 	}
 
-	if n, err := strconv.Atoi(target); err == nil {
-		if n < 1 || n > len(sessions) {
-			return "", fmt.Errorf("invalid session number (use 'ovpnctl sessions' to list)")
-		}
-		return sessions[n-1].Path, nil
-	}
-
-	profile, err := getProfileCmd(target)
+	n, err := strconv.Atoi(target)
 	if err != nil {
-		return "", fmt.Errorf("argument must be session number, full session path, or profile name")
+		return "", fmt.Errorf("argument must be a number or full session path")
 	}
-
-	configPath := strings.ToLower(strings.TrimSpace(profile.ExpandedConfigFile()))
-	configBase := strings.ToLower(filepath.Base(configPath))
-	for _, s := range sessions {
-		sessCfg := strings.ToLower(strings.TrimSpace(s.Config))
-		if sessCfg == "" {
-			continue
-		}
-		if sessCfg == configPath || strings.Contains(sessCfg, configPath) || filepath.Base(sessCfg) == configBase {
-			return s.Path, nil
-		}
+	if n < 1 || n > len(sessions) {
+		return "", fmt.Errorf("invalid session number (use 'ovpnctl sessions' to list)")
 	}
-
-	return "", fmt.Errorf("no active session found for profile %q", profile.Name)
+	return sessions[n-1].Path, nil
 }
