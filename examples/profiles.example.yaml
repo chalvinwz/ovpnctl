@@ -1,7 +1,7 @@
 profiles:
   - name: office
     config_file: /etc/openvpn/office.ovpn
-    username: user@corp
+    username: user
     password: very$ecret2026
     private_key_pass: ""
 

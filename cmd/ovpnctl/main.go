@@ -8,13 +8,14 @@ import (
 	"github.com/chalvinwz/ovpnctl/internal/cmd"
 )
 
-func main() {
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	})))
+var (
+	execute = cmd.Execute
+	exitFn  = os.Exit
+)
 
-	if err := cmd.Execute(); err != nil {
+func main() {
+	if err := execute(); err != nil {
 		slog.Error("command failed", "err", err)
-		os.Exit(1)
+		exitFn(1)
 	}
 }
