@@ -1,3 +1,9 @@
+# Build artifacts
 out/
 bin/
-*.sh
+dist/
+ovpnctl
+
+# Test artifacts
+cover.out
+*.coverprofile
